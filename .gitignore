@@ -1,0 +1,5 @@
+aasdk/
+build/
+.clang-format
+.vscode/
+.cache/
