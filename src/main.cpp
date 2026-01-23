@@ -63,6 +63,7 @@ Vector2 playerHead = {0, 0};
 Vector2 playerTail[GRID_COLS * GRID_ROWS] = {0};
 Vector2 playerHeading = {0, 0};
 int points = 0;
+int moveDelay = 150;
 
 // apple
 Vector2 applePos = {0, 0};
@@ -113,20 +114,20 @@ void setApplePos() {
 }
 
 void setPlayerPos() {
-  // while (true) {
-  //   uniform_int_distribution<> distrX(0, GRID_COLS - 1);
-  //   int randX = distrX(gen);
+  while (true) {
+    uniform_int_distribution<> distrX(0, GRID_COLS - 1);
+    int randX = distrX(gen);
 
-  //   uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
-  //   int randY = distrY(gen);
+    uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
+    int randY = distrY(gen);
 
-  //   if (gameMatrix[randY][randX] == EMPTY) {
-  //     playerHead = {randX, randY};
-  //     gameMatrix[randY][randX] = PLAYER;
-  //     break;
-  //   }
-  // }
-  playerHead = {10,10};
+    if (gameMatrix[randY][randX] == EMPTY) {
+      playerHead = {randX, randY};
+      gameMatrix[randY][randX] = PLAYER;
+      break;
+    }
+  }
+  
   playerHeading = {0, 0};
   clearTail();
 }
@@ -364,7 +365,7 @@ void drawPlayer() {
   }
 }
 
-int moveDelay = 150;
+
 
 int main(int argc, char *argv[]) {
   if (!initializeSDL()) {
