@@ -1,5 +1,7 @@
 aasdk/
 build/
+build-win/
+deps/
 .clang-format
 .vscode/
 .cache/

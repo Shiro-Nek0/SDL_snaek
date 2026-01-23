@@ -105,7 +105,6 @@ void setApplePos() {
     if (gameMatrix[randY][randX] == EMPTY) {
 
       applePos = {randX, randY};
-      printf("%i,%i", applePos.x, applePos.y);
       gameMatrix[randY][randX] = APPLE;
 
       break;
@@ -288,15 +287,6 @@ void close() {
   SDL_Quit();
 }
 
-void debug() {
-  for (int x = 0; x < GRID_COLS; x++) {
-    for (int y = 0; y < GRID_ROWS; y++) {
-      printf("%i", gameMatrix[x][y]);
-    }
-    printf("\n");
-  }
-}
-
 void drawBG() {
   SDL_Rect cell = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
   SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
@@ -365,8 +355,6 @@ void drawPlayer() {
   }
 }
 
-
-
 int main(int argc, char *argv[]) {
   if (!initializeSDL()) {
     return EXIT_FAILURE;
@@ -379,7 +367,6 @@ int main(int argc, char *argv[]) {
   if (!initializeWin()) {
     return EXIT_FAILURE;
   }
-  debug();
 
   SDL_Event windowEvent;
 
