@@ -7,9 +7,13 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL_events.h>
 #include <SDL_scancode.h>
+#include <SDL_surface.h>
+#include <SDL_timer.h>
 #include <SDL_video.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <random>
 #include <stdio.h>
 #include <string>
 
@@ -17,19 +21,117 @@ using namespace std;
 
 const string WINDOW_TITLE = "snaek";
 const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 480;
-const int FRAMERATE = 60;
+const int WINDOW_HEIGHT = 800;
+// const int FRAMERATE = 60;
+
+struct Vector2 {
+  int x;
+  int y;
+};
+
+enum {
+  EMPTY,
+  APPLE,
+  PLAYER,
+  PLAYERTAIL,
+  TAIL
+};
+
+random_device randomGenerator;
+mt19937 gen(randomGenerator());
+
 bool running = true;
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 
+// stage
+const int GRID_COLS = 25;
+const int GRID_ROWS = 25;
+int gameMatrix[GRID_ROWS][GRID_COLS] = {EMPTY};
+Vector2 blockSize = {WINDOW_WIDTH / GRID_COLS, WINDOW_HEIGHT / GRID_ROWS};
+
+// assets
+int fontSize = 32;
 TTF_Font *f_font = NULL;
 Mix_Music *m_BGM = NULL;
 Mix_Chunk *s_Point = NULL;
 Mix_Chunk *s_Death = NULL;
 
-bool initialize() {
+// player
+Vector2 playerHead = {0, 0};
+Vector2 playerTail[GRID_COLS * GRID_ROWS] = {0};
+Vector2 playerHeading = {0, 0};
+int points = 0;
+
+// apple
+Vector2 applePos = {0, 0};
+
+void appendTail(int x, int y) {
+  int maxCapacity = GRID_COLS * GRID_ROWS;
+
+  if (points < maxCapacity) {
+    playerTail[points] = {x, y};
+    points++;
+  }
+}
+
+void clearTail() {
+  points = 0;
+
+  std::fill_n(playerTail, GRID_COLS * GRID_ROWS, Vector2{0, 0});
+}
+
+void updateTailPosition(int newHeadX, int newHeadY) {
+  for (int i = points - 1; i > 0; i--) {
+    playerTail[i] = playerTail[i - 1];
+  }
+
+  if (points > 0) {
+    playerTail[0] = {playerHead.x, playerHead.y};
+  }
+
+  playerHead = {newHeadX, newHeadY};
+}
+
+void setApplePos() {
+  while (true) {
+    std::uniform_int_distribution<> distrX(0, GRID_COLS - 1);
+    std::uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
+    int randX = distrX(gen);
+    int randY = distrY(gen);
+
+    if (gameMatrix[randY][randX] == EMPTY) {
+
+      applePos = {randX, randY};
+      printf("%i,%i", applePos.x, applePos.y);
+      gameMatrix[randY][randX] = APPLE;
+
+      break;
+    }
+  }
+}
+
+void setPlayerPos() {
+  // while (true) {
+  //   uniform_int_distribution<> distrX(0, GRID_COLS - 1);
+  //   int randX = distrX(gen);
+
+  //   uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
+  //   int randY = distrY(gen);
+
+  //   if (gameMatrix[randY][randX] == EMPTY) {
+  //     playerHead = {randX, randY};
+  //     gameMatrix[randY][randX] = PLAYER;
+  //     break;
+  //   }
+  // }
+  playerHead = {10,10};
+  playerHeading = {0, 0};
+  clearTail();
+}
+
+bool initializeSDL() {
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
     fprintf(stderr, "SDL could not initialize! SDL Error: %s\n", SDL_GetError());
     return false;
@@ -53,7 +155,7 @@ bool initialize() {
   return true;
 }
 
-bool loadMedia() {
+bool loadAssets() {
   // //Load prompt texture
   // if( !gPromptTexture.loadFromFile( "21_sound_effects_and_music/prompt.png" ) )
   // {
@@ -61,7 +163,7 @@ bool loadMedia() {
   //     return false;
   // }
 
-  f_font = TTF_OpenFont("assets/font.ttf", 24);
+  f_font = TTF_OpenFont("assets/font.ttf", fontSize);
 
   if (f_font == NULL) {
     fprintf(stderr, "Failed to load font: %s\n", TTF_GetError());
@@ -89,20 +191,48 @@ bool loadMedia() {
   return true;
 }
 
+bool initializeWin() {
+  window = SDL_CreateWindow("SDL2 Window - FPS: 0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  if (!window) {
+    fprintf(stderr, "Window could not be created! SDL_Error:  %s\n", SDL_GetError());
+    SDL_Quit();
+    return false;
+  }
+
+  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED /* | SDL_RENDERER_PRESENTVSYNC*/);
+  if (!renderer) {
+    fprintf(stderr, "Renderer could not be created! SDL_Error:  %s\n", SDL_GetError());
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return false;
+  }
+
+  return true;
+}
+
 void reset();
 void handleInput() {
   const Uint8 *currentKeyStates = SDL_GetKeyboardState(NULL);
 
   if (currentKeyStates[SDL_SCANCODE_W]) {
+    // Mix_PlayChannel( -1, s_Point, 0 );
+    playerHeading.x = 0;
+    playerHeading.y = -1;
   }
 
   if (currentKeyStates[SDL_SCANCODE_S]) {
+    playerHeading.x = 0;
+    playerHeading.y = 1;
   }
 
-  if (currentKeyStates[SDL_SCANCODE_A]) {
+if (currentKeyStates[SDL_SCANCODE_A]) {
+    playerHeading.x = -1;
+    playerHeading.y = 0;
   }
 
   if (currentKeyStates[SDL_SCANCODE_D]) {
+    playerHeading.x = 1;
+    playerHeading.y = 0;
   }
 
   if (currentKeyStates[SDL_SCANCODE_R]) {
@@ -127,6 +257,10 @@ void handleInput() {
 }
 
 void reset() {
+  points = 0;
+
+  setApplePos();
+  setPlayerPos();
 }
 
 void close() {
@@ -146,43 +280,113 @@ void close() {
   SDL_DestroyWindow(window);
   window = NULL;
   renderer = NULL;
-  
+
   TTF_Quit();
   Mix_Quit();
   IMG_Quit();
   SDL_Quit();
 }
 
+void debug() {
+  for (int x = 0; x < GRID_COLS; x++) {
+    for (int y = 0; y < GRID_ROWS; y++) {
+      printf("%i", gameMatrix[x][y]);
+    }
+    printf("\n");
+  }
+}
+
+void drawBG() {
+  SDL_Rect cell = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+  SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
+  SDL_RenderDrawRect(renderer, &cell);
+  SDL_RenderClear(renderer);
+}
+
+void drawFG() {
+  int lineWidth = 2;
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+  for (int y = 0; y < GRID_ROWS; y++) {
+    for (int x = 0; x < GRID_COLS; x++) {
+      int rectX = x * blockSize.x;
+      int rectY = y * blockSize.y;
+      int rectW = blockSize.x;
+      int rectH = blockSize.y;
+
+      SDL_Rect borders[4] = {
+          {rectX, rectY, rectW, lineWidth},
+          {rectX, rectY + rectH - lineWidth, rectW, lineWidth},
+          {rectX, rectY, lineWidth, rectH},
+          {rectX + rectW - lineWidth, rectY, lineWidth, rectH}};
+
+      SDL_RenderFillRects(renderer, borders, 4);
+    }
+  }
+
+  SDL_Color textColor = {255, 255, 255, 255};
+  std::string scoreText = "Points: " + std::to_string(points);
+
+  SDL_Surface *textSurface = TTF_RenderText_Blended(f_font, scoreText.c_str(), textColor);
+
+  if (textSurface != NULL) {
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+
+    if (textTexture != NULL) {
+      SDL_Rect textRect;
+      textRect.w = textSurface->w;
+      textRect.h = textSurface->h;
+      textRect.x = (WINDOW_WIDTH / 2) - (textRect.w / 2);
+      textRect.y = 15;
+
+      SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+
+      SDL_DestroyTexture(textTexture);
+    }
+    SDL_FreeSurface(textSurface);
+  }
+}
+
+void drawPlayer() {
+  SDL_Rect appleRender = {applePos.x * blockSize.x, applePos.y * blockSize.y, blockSize.x, blockSize.y};
+  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+  SDL_RenderFillRect(renderer, &appleRender);
+
+  SDL_Rect playerHeadRender = {playerHead.x * blockSize.x, playerHead.y * blockSize.y, blockSize.x, blockSize.y};
+  SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+  SDL_RenderFillRect(renderer, &playerHeadRender);
+
+  for (int i = 0; i < points; i++) {
+    SDL_Rect tailRect = {playerTail[i].x * blockSize.x, playerTail[i].y * blockSize.y, blockSize.x, blockSize.y};
+
+    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+    SDL_RenderFillRect(renderer, &tailRect);
+  }
+}
+
+int moveDelay = 150;
+
 int main(int argc, char *argv[]) {
-  if (!initialize()) {
+  if (!initializeSDL()) {
     return EXIT_FAILURE;
   }
 
-  if (!loadMedia()) {
+  if (!loadAssets()) {
     return EXIT_FAILURE;
   }
 
-  window = SDL_CreateWindow("SDL2 Window - FPS: 0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-
-  if (!window) {
-    fprintf(stderr, "Window could not be created! SDL_Error:  %s\n", SDL_GetError());
-    SDL_Quit();
+  if (!initializeWin()) {
     return EXIT_FAILURE;
   }
-
-  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  if (!renderer) {
-    fprintf(stderr, "Renderer could not be created! SDL_Error:  %s\n", SDL_GetError());
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return EXIT_FAILURE;
-  }
+  debug();
 
   SDL_Event windowEvent;
 
   Uint32 startTime = SDL_GetTicks();
   int frameCount = 0;
+  int lastMoveTime = 0;
 
+  reset();
   while (running) {
     if (SDL_PollEvent(&windowEvent)) {
       switch (windowEvent.type) {
@@ -192,33 +396,57 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // if (Mix_PlayingMusic() == 0) {
-    //   Mix_PlayMusic(m_BGM, -1);
-    // }
+    if (Mix_PlayingMusic() == 0) {
+      Mix_PlayMusic(m_BGM, -1);
+    }
 
     handleInput();
 
-    SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
-    SDL_RenderClear(renderer);
-
-    SDL_Color textColor = {255, 255, 255, 255};
-    SDL_Surface *textSurface = TTF_RenderText_Solid(f_font, "Pts: 0", textColor);
-
-    if (!textSurface) {
-      printf("Failed to create text surface: %s\n", TTF_GetError());
-      return EXIT_FAILURE;
+    if (playerHead.x == applePos.x && playerHead.y == applePos.y) {
+      points += 1;
+      setApplePos();
+      Mix_PlayChannel(-1, s_Point, 0);
     }
 
-    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    int now = SDL_GetTicks();
+    if (now - lastMoveTime >= moveDelay) {
+      for (int i = points; i > 0; i--) {
+        playerTail[i] = playerTail[i - 1];
+      }
 
-    if (!textTexture) {
-      printf("Failed to create text texture: %s\n", SDL_GetError());
-      return EXIT_FAILURE;
+      if (points > 0) {
+        playerTail[0] = playerHead;
+      }
+
+      playerHead.x += playerHeading.x;
+      playerHead.y += playerHeading.y;
+
+      if (playerHead.x < 0) playerHead.x = GRID_COLS - 1;
+      else if (playerHead.x >= GRID_COLS) playerHead.x = 0;
+
+      if (playerHead.y < 0) playerHead.y = GRID_ROWS - 1;
+      else if (playerHead.y >= GRID_ROWS) playerHead.y = 0;
+
+      if (playerHead.x == applePos.x && playerHead.y == applePos.y) {
+        points++;
+        setApplePos();
+        Mix_PlayChannel(-1, s_Point, 0);
+      }
+      
+      for(int i = 0; i < points; i++) {
+          if(playerHead.x == playerTail[i].x && playerHead.y == playerTail[i].y) {
+              Mix_PlayChannel(-1, s_Death, 0);
+              reset();
+              break;
+          }
+      }
+
+      lastMoveTime = now;
     }
 
-    SDL_Rect textRect = {WINDOW_WIDTH/2-textSurface->w/2, 20, textSurface->w, textSurface->h};
-    SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
-
+    drawBG();
+    drawPlayer();
+    drawFG();
     SDL_RenderPresent(renderer);
 
     frameCount++;
