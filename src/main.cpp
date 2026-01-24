@@ -446,15 +446,16 @@ int main(int argc, char *argv[]) {
       playerHead.x += playerHeading.x;
       playerHead.y += playerHeading.y;
 
-      if (playerHead.x < 0)
+      if (playerHead.x < 0) {
         playerHead.x = GRID_COLS - 1;
-      else if (playerHead.x >= GRID_COLS)
+      } else if (playerHead.x >= GRID_COLS) {
         playerHead.x = 0;
-
-      if (playerHead.y < 0)
+      }
+      if (playerHead.y < 0) {
         playerHead.y = GRID_ROWS - 1;
-      else if (playerHead.y >= GRID_ROWS)
+      } else if (playerHead.y >= GRID_ROWS) {
         playerHead.y = 0;
+      }
 
       if (playerHead.x == applePos.x && playerHead.y == applePos.y) {
         points++;
