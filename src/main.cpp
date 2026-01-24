@@ -1,26 +1,27 @@
+#include "DrawUtils.h"
 #ifdef __ANDROID__
-  #include <SDL.h>
-  #include <SDL_image.h>
-  #include <SDL_keycode.h>
-  #include <SDL_mixer.h>
-  #include <SDL_rect.h>
-  #include <SDL_render.h>
-  #include <SDL_ttf.h>
-  #include <android/log.h>
-  #define fprintf(stream, fmt, ...) __android_log_print(ANDROID_LOG_ERROR, "SDL_snaek", fmt, ##__VA_ARGS__)
-  #define ASSET_PATH ""
+#include <SDL.h>
+#include <SDL_image.h>
+#include <SDL_keycode.h>
+#include <SDL_mixer.h>
+#include <SDL_rect.h>
+#include <SDL_render.h>
+#include <SDL_ttf.h>
+#define ASSET_PATH ""
 #else
-  #include <SDL2/SDL.h>
-  #include <SDL2/SDL_image.h>
-  #include <SDL2/SDL_keycode.h>
-  #include <SDL2/SDL_mixer.h>
-  #include <SDL2/SDL_rect.h>
-  #include <SDL2/SDL_render.h>
-  #include <SDL2/SDL_ttf.h>
-  #define ASSET_PATH "assets/"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_ttf.h>
+#define ASSET_PATH "assets/"
 #endif
 
+#include <SDL_error.h>
 #include <SDL_events.h>
+#include <SDL_log.h>
 #include <SDL_scancode.h>
 #include <SDL_surface.h>
 #include <SDL_timer.h>
@@ -32,16 +33,17 @@
 #include <stdio.h>
 #include <string>
 
-//TODO:
-// make cmake build for android windows and linux (maybe a cmake flag like WIN32/LINUX/ANDROID)
-// android: ./gradlew assembleDebug
-// win32: cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw.cmake .. && make -j$(nproc)
-// linux: cmake .. && make -j$(nproc)
-// replace SDL2 with SDL3
-// replace SDL2/*.h with *.h
-// make symlinks for assets or embed them somehow
-// replace fprintf with SDL_LogError
-// make scripts to get SDL2 source code for mingw (./deps) and android (./SDL_snaek_android/app/jni), maybe it can be unified?
+// TODO:
+//  make cmake build for android windows and linux (maybe a cmake flag like WIN32/LINUX/ANDROID)
+//  android: ./gradlew assembleDebug
+//  win32: cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw.cmake .. && make -j$(nproc)
+//  linux: cmake .. && make -j$(nproc)
+//  replace SDL2 with SDL3
+//  replace SDL2/*.h with *.h
+//  make symlinks for assets or embed them somehow
+//  make scripts to get SDL2 source code for mingw (./deps) and android (./SDL_snaek_android/app/jni), maybe it can be unified?
+//  make build scripts for all platforms and unify build folder (build/android | build/linux | build/windows) with its build script (get source files and build) + build all
+//  move deps to windows specific folder(?) maybe the build folder same with android, that way in the root theres only cmake and source code and assets
 
 using namespace std;
 
@@ -152,30 +154,30 @@ void setPlayerPos() {
       break;
     }
   }
-  
+
   playerHeading = {0, 0};
   clearTail();
 }
 
 bool initializeSDL() {
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
-    fprintf(stderr, "SDL could not initialize! SDL Error: %s\n", SDL_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL could not initialize! SDL Error: %s\n", SDL_GetError());
     return false;
   }
 
   if (TTF_Init() < 0) {
-    fprintf(stderr, "SDL_ttf could not initialize! TTF_Error: %s\n", TTF_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_ttf could not initialize! TTF_Error: %s\n", TTF_GetError());
     return false;
   }
 
   int imgFlags = IMG_INIT_PNG;
   if (!(IMG_Init(imgFlags) & imgFlags)) {
-    fprintf(stderr, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
     return false;
   }
 
   if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-    fprintf(stderr, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
     return false;
   }
   return true;
@@ -189,28 +191,37 @@ bool loadAssets() {
   //     return false;
   // }
 
-f_font = TTF_OpenFont(ASSET_PATH "font.ttf", fontSize);
+  SDL_Surface *icon = IMG_Load(ASSET_PATH "icon.png");
+  if (icon == NULL) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not load icon: %s\n", IMG_GetError());
+    return false;
+  }
+
+  SDL_SetWindowIcon(window, icon);
+  SDL_FreeSurface(icon);
+
+  f_font = TTF_OpenFont(ASSET_PATH "font.ttf", fontSize);
 
   if (f_font == NULL) {
-    fprintf(stderr, "Failed to load font: %s\n", TTF_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to load font: %s\n", TTF_GetError());
     return false;
   }
 
   m_BGM = Mix_LoadMUS(ASSET_PATH "bgm.wav");
   if (m_BGM == NULL) {
-    fprintf(stderr, "Failed to load bgm music! SDL_mixer Error: %s\n", Mix_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to load bgm music! SDL_mixer Error: %s\n", Mix_GetError());
     return false;
   }
 
   s_Point = Mix_LoadWAV(ASSET_PATH "point.wav");
   if (s_Point == NULL) {
-    fprintf(stderr, "Failed to load point sound effect! SDL_mixer Error: %s\n", Mix_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to load point sound effect! SDL_mixer Error: %s\n", Mix_GetError());
     return false;
   }
 
   s_Death = Mix_LoadWAV(ASSET_PATH "death.wav");
   if (s_Death == NULL) {
-    fprintf(stderr, "Failed to load death sound effect! SDL_mixer Error: %s\n", Mix_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to load death sound effect! SDL_mixer Error: %s\n", Mix_GetError());
     return false;
   }
 
@@ -220,14 +231,14 @@ f_font = TTF_OpenFont(ASSET_PATH "font.ttf", fontSize);
 bool initializeWin() {
   window = SDL_CreateWindow("SDL2 Window - FPS: 0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (!window) {
-    fprintf(stderr, "Window could not be created! SDL_Error:  %s\n", SDL_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Window could not be created! SDL_Error:  %s\n", SDL_GetError());
     SDL_Quit();
     return false;
   }
 
   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED /* | SDL_RENDERER_PRESENTVSYNC*/);
   if (!renderer) {
-    fprintf(stderr, "Renderer could not be created! SDL_Error:  %s\n", SDL_GetError());
+    SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Renderer could not be created! SDL_Error:  %s\n", SDL_GetError());
     SDL_DestroyWindow(window);
     SDL_Quit();
     return false;
@@ -251,7 +262,7 @@ void handleInput() {
     playerHeading.y = 1;
   }
 
-if (currentKeyStates[SDL_SCANCODE_A]) {
+  if (currentKeyStates[SDL_SCANCODE_A]) {
     playerHeading.x = -1;
     playerHeading.y = 0;
   }
@@ -435,24 +446,28 @@ int main(int argc, char *argv[]) {
       playerHead.x += playerHeading.x;
       playerHead.y += playerHeading.y;
 
-      if (playerHead.x < 0) playerHead.x = GRID_COLS - 1;
-      else if (playerHead.x >= GRID_COLS) playerHead.x = 0;
+      if (playerHead.x < 0)
+        playerHead.x = GRID_COLS - 1;
+      else if (playerHead.x >= GRID_COLS)
+        playerHead.x = 0;
 
-      if (playerHead.y < 0) playerHead.y = GRID_ROWS - 1;
-      else if (playerHead.y >= GRID_ROWS) playerHead.y = 0;
+      if (playerHead.y < 0)
+        playerHead.y = GRID_ROWS - 1;
+      else if (playerHead.y >= GRID_ROWS)
+        playerHead.y = 0;
 
       if (playerHead.x == applePos.x && playerHead.y == applePos.y) {
         points++;
         setApplePos();
         Mix_PlayChannel(-1, s_Point, 0);
       }
-      
-      for(int i = 0; i < points; i++) {
-          if(playerHead.x == playerTail[i].x && playerHead.y == playerTail[i].y) {
-              Mix_PlayChannel(-1, s_Death, 0);
-              reset();
-              break;
-          }
+
+      for (int i = 0; i < points; i++) {
+        if (playerHead.x == playerTail[i].x && playerHead.y == playerTail[i].y) {
+          Mix_PlayChannel(-1, s_Death, 0);
+          reset();
+          break;
+        }
       }
 
       lastMoveTime = now;
