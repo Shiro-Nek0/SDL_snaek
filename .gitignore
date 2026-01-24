@@ -1,7 +1,11 @@
-aasdk/
 build/
 build-win/
 deps/
+
 .clang-format
 .vscode/
 .cache/
+
+SDL_snaek_android/app/build/
+SDL_snaek_android/app/jni/SDL2*
+SDL_snaek_android/app/.cxx

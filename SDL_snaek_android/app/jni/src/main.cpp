@@ -1,10 +1,10 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL.h>
+#include <SDL_image.h>
+#include <SDL_keycode.h>
+#include <SDL_mixer.h>
+#include <SDL_rect.h>
+#include <SDL_render.h>
+#include <SDL_ttf.h>
 #include <SDL_events.h>
 #include <SDL_scancode.h>
 #include <SDL_surface.h>
@@ -17,16 +17,7 @@
 #include <stdio.h>
 #include <string>
 
-//TODO:
-// make cmake build for android windows and linux (maybe a cmake flag like WIN32/LINUX/ANDROID)
-// android: ./gradlew assembleDebug
-// win32: cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw.cmake .. && make -j$(nproc)
-// linux: cmake .. && make -j$(nproc)
-// replace SDL2 with SDL3
-// replace SDL2/*.h with *.h
-// make symlinks for assets or embed them somehow
-// replace fprintf with SDL_LogError
-
+#define fprintf(stream, fmt, ...) SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, fmt, ##__VA_ARGS__)
 using namespace std;
 
 const string WINDOW_TITLE = "snaek";
