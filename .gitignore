@@ -9,6 +9,6 @@ deps/
 
 SDL_snaek_android/app/build/
 SDL_snaek_android/app/jni/SDL2*
-SDL_snaek_android/app/src/main/res/mipmap-*
+
 SDL_snaek_android/app/.cxx
 SDL_snaek_android/.gradle

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
-project(SDL2_snaek)
+
+project(SDL2_snaek) 
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -47,19 +48,19 @@ else()
     find_package(SDL2_mixer REQUIRED)
     find_package(SDL2_ttf REQUIRED)
 
-    add_executable(SDL2_snaek src/main.cpp)
+    add_executable(${PROJECT_NAME} src/main.cpp)
 
     if(WIN32)
-        target_link_libraries(SDL2_snaek PRIVATE
+        target_link_libraries(${PROJECT_NAME} PRIVATE
             SDL2::SDL2main
             SDL2::SDL2
             SDL2_image::SDL2_image
             SDL2_mixer::SDL2_mixer
             SDL2_ttf::SDL2_ttf
         )
-        target_link_options(SDL2_snaek PRIVATE -static)
+        target_link_options(${PROJECT_NAME} PRIVATE -static)
 
-        target_include_directories(SDL2_snaek PRIVATE
+        target_include_directories(${PROJECT_NAME} PRIVATE
             "${SDL2_PATH}/include"
             "${IMG_PATH}/include"
             "${MIX_PATH}/include"
@@ -72,13 +73,13 @@ else()
             "${MIX_PATH}/bin/*.dll"
             "${TTF_PATH}/bin/*.dll"
         )
-        add_custom_command(TARGET SDL2_snaek POST_BUILD
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${DLL_FILES}
-            $<TARGET_FILE_DIR:SDL2_snaek>
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
         )
     else()
-        target_link_libraries(SDL2_snaek PRIVATE
+        target_link_libraries(${PROJECT_NAME} PRIVATE
             SDL2::SDL2
             SDL2_image::SDL2_image
             SDL2_mixer::SDL2_mixer
@@ -86,10 +87,9 @@ else()
         )
     endif()
 
-    # Asset Copying Logic (Desktop Only)
-    add_custom_command(TARGET SDL2_snaek POST_BUILD
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/assets
-        $<TARGET_FILE_DIR:SDL2_snaek>/assets
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
     )
 endif()

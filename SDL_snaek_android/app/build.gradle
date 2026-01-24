@@ -1,4 +1,15 @@
-def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
+def getProjectNameFromCMake() {
+    def cmakeFile = file('../../CMakeLists.txt')
+    if (cmakeFile.exists()) {
+        def matcher = cmakeFile.text =~ /project\s*\(\s*([^\s)]+)\s*\)/
+        if (matcher.find()) {
+            return matcher.group(1)
+        }
+    }
+    return 'Game'
+}
+
+def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY')
 def buildAsApplication = !buildAsLibrary
 if (buildAsApplication) {
     apply plugin: 'com.android.application'
@@ -9,25 +20,25 @@ else {
 
 android {
     if (buildAsApplication) {
-        namespace "org.libsdl.app"
+        namespace 'org.libsdl.app'
     }
     compileSdkVersion 34
-    
+
     sourceSets {
         main {
             assets.srcDirs += ['../../assets']
         }
     }
-    
+
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 34
         versionCode 1
-        versionName "1.0"
-
+        versionName '1.0'
+        resValue 'string', 'app_name', getProjectNameFromCMake()
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_STL=c++_shared"
+                arguments '-DANDROID_STL=c++_shared'
             }
         }
     }
@@ -54,7 +65,7 @@ android {
             }
         }
     }
-    
+
     lint {
         abortOnError false
     }
@@ -63,9 +74,9 @@ android {
         libraryVariants.all { variant ->
             variant.outputs.each { output ->
                 def outputFile = output.outputFile
-                if (outputFile != null && outputFile.name.endsWith(".aar")) {
-                    def fileName = "org.libsdl.app.aar";
-                    output.outputFile = new File(outputFile.parent, fileName);
+                if (outputFile != null && outputFile.name.endsWith('.aar')) {
+                    def fileName = 'org.libsdl.app.aar'
+                    output.outputFile = new File(outputFile.parent, fileName)
                 }
             }
         }
