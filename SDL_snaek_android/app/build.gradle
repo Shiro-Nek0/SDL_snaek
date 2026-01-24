@@ -50,11 +50,11 @@ android {
         }
         externalNativeBuild {
             cmake {
-                path 'jni/CMakeLists.txt'
+                path '../../CMakeLists.txt'
             }
         }
-
     }
+    
     lint {
         abortOnError false
     }
