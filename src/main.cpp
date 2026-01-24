@@ -1,10 +1,25 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_ttf.h>
+#ifdef __ANDROID__
+  #include <SDL.h>
+  #include <SDL_image.h>
+  #include <SDL_keycode.h>
+  #include <SDL_mixer.h>
+  #include <SDL_rect.h>
+  #include <SDL_render.h>
+  #include <SDL_ttf.h>
+  #include <android/log.h>
+  #define fprintf(stream, fmt, ...) __android_log_print(ANDROID_LOG_ERROR, "SDL_snaek", fmt, ##__VA_ARGS__)
+  #define ASSET_PATH ""
+#else
+  #include <SDL2/SDL.h>
+  #include <SDL2/SDL_image.h>
+  #include <SDL2/SDL_keycode.h>
+  #include <SDL2/SDL_mixer.h>
+  #include <SDL2/SDL_rect.h>
+  #include <SDL2/SDL_render.h>
+  #include <SDL2/SDL_ttf.h>
+  #define ASSET_PATH "assets/"
+#endif
+
 #include <SDL_events.h>
 #include <SDL_scancode.h>
 #include <SDL_surface.h>
@@ -26,6 +41,7 @@
 // replace SDL2/*.h with *.h
 // make symlinks for assets or embed them somehow
 // replace fprintf with SDL_LogError
+// make scripts to get SDL2 source code for mingw (./deps) and android (./SDL_snaek_android/app/jni), maybe it can be unified?
 
 using namespace std;
 
@@ -167,32 +183,32 @@ bool initializeSDL() {
 
 bool loadAssets() {
   // //Load prompt texture
-  // if( !gPromptTexture.loadFromFile( "21_sound_effects_and_music/prompt.png" ) )
+  // if( !gPromptTexture.loadFromFile(ASSET_PATH "21_sound_effects_and_music/prompt.png" ) )
   // {
   //     printf( "Failed to load prompt texture!\n" );
   //     return false;
   // }
 
-  f_font = TTF_OpenFont("assets/font.ttf", fontSize);
+f_font = TTF_OpenFont(ASSET_PATH "font.ttf", fontSize);
 
   if (f_font == NULL) {
     fprintf(stderr, "Failed to load font: %s\n", TTF_GetError());
     return false;
   }
 
-  m_BGM = Mix_LoadMUS("assets/bgm.wav");
+  m_BGM = Mix_LoadMUS(ASSET_PATH "bgm.wav");
   if (m_BGM == NULL) {
     fprintf(stderr, "Failed to load bgm music! SDL_mixer Error: %s\n", Mix_GetError());
     return false;
   }
 
-  s_Point = Mix_LoadWAV("assets/point.wav");
+  s_Point = Mix_LoadWAV(ASSET_PATH "point.wav");
   if (s_Point == NULL) {
     fprintf(stderr, "Failed to load point sound effect! SDL_mixer Error: %s\n", Mix_GetError());
     return false;
   }
 
-  s_Death = Mix_LoadWAV("assets/death.wav");
+  s_Death = Mix_LoadWAV(ASSET_PATH "death.wav");
   if (s_Death == NULL) {
     fprintf(stderr, "Failed to load death sound effect! SDL_mixer Error: %s\n", Mix_GetError());
     return false;

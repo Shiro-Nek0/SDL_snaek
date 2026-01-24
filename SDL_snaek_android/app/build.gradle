@@ -12,6 +12,13 @@ android {
         namespace "org.libsdl.app"
     }
     compileSdkVersion 34
+    
+    sourceSets {
+        main {
+            assets.srcDirs += ['../../assets']
+        }
+    }
+    
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 34
@@ -19,20 +26,8 @@ android {
         versionName "1.0"
 
         externalNativeBuild {
-            // REMOVE or COMMENT OUT ndkBuild
-            // ndkBuild {
-            //    arguments "APP_PLATFORM=android-19"
-            //    abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-            // }
-
-            // ENABLE CMake
             cmake {
-                // We use c++_shared because SDL2 and plugins often work best
-                // when loaded dynamically on Android.
                 arguments "-DANDROID_STL=c++_shared"
-
-                // You can limit architectures here if build times are too slow,
-                // e.g., abiFilters 'arm64-v8a'
             }
         }
     }
@@ -54,12 +49,6 @@ android {
             jniLibs.srcDir 'libs'
         }
         externalNativeBuild {
-            // REMOVE or COMMENT OUT ndkBuild path
-            // ndkBuild {
-            //     path 'jni/Android.mk'
-            // }
-
-            // ENABLE CMake path
             cmake {
                 path 'jni/CMakeLists.txt'
             }
