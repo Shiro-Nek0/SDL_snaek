@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 enum class Align {
     TOP_LEFT,

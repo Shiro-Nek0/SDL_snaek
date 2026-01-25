@@ -13,7 +13,7 @@ echo "Detected Project Name: $PROJECT_NAME"
 mkdir -p $DEPS_DIR
 mkdir -p $OUTPUT_DIR
 
-if [ ! -d "$DEPS_DIR/SDL2" ]; then
+if [ ! -d "$DEPS_DIR/SDL2-2.32.10" ]; then
     echo "ERROR: SDL2 source not found in $DEPS_DIR"
     echo "Please download the development libraries (SDL2-2.32.10.tar.gz)"
     exit 1

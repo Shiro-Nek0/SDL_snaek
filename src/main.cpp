@@ -1,5 +1,5 @@
 #include "DrawUtils.h"
-#ifdef __ANDROID__
+
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_keycode.h>
@@ -7,18 +7,6 @@
 #include <SDL_rect.h>
 #include <SDL_render.h>
 #include <SDL_ttf.h>
-#define ASSET_PATH ""
-#else
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_ttf.h>
-#define ASSET_PATH "assets/"
-#endif
-
 #include <SDL_error.h>
 #include <SDL_events.h>
 #include <SDL_log.h>
@@ -34,16 +22,7 @@
 #include <string>
 
 // TODO:
-//  make cmake build for android windows and linux (maybe a cmake flag like WIN32/LINUX/ANDROID)
-//  android: ./gradlew assembleDebug
-//  win32: cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw.cmake .. && make -j$(nproc)
-//  linux: cmake .. && make -j$(nproc)
-//  replace SDL2 with SDL3
-//  replace SDL2/*.h with *.h
-//  make symlinks for assets or embed them somehow
 //  make scripts to get SDL2 source code for mingw (./deps) and android (./SDL_snaek_android/app/jni), maybe it can be unified?
-//  make build scripts for all platforms and unify build folder (build/android | build/linux | build/windows) with its build script (get source files and build) + build all
-//  move deps to windows specific folder(?) maybe the build folder same with android, that way in the root theres only cmake and source code and assets
 
 using namespace std;
 
