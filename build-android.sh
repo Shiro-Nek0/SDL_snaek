@@ -12,14 +12,19 @@ fi
 echo "Detected Project Name: $PROJECT_NAME"
 
 echo "Generating Icons..."
+mkdir -p ./SDL_snaek_android/app/src/main/res/mipmap-mdpi
 magick ./assets/icon.png -resize 48x48   ./SDL_snaek_android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+mkdir -p ./SDL_snaek_android/app/src/main/res/mipmap-hdpi
 magick ./assets/icon.png -resize 72x72   ./SDL_snaek_android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+mkdir -p ./SDL_snaek_android/app/src/main/res/mipmap-xhdpi
 magick ./assets/icon.png -resize 96x96   ./SDL_snaek_android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+mkdir -p ./SDL_snaek_android/app/src/main/res/mipmap-xxhdpi
 magick ./assets/icon.png -resize 144x144 ./SDL_snaek_android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+mkdir -p ./SDL_snaek_android/app/src/main/res/mipmap-xxxhdpi
 magick ./assets/icon.png -resize 192x192 ./SDL_snaek_android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
 ANDROID_PROJECT_DIR="SDL_snaek_android"
-OUTPUT_DIR="build/android"
+OUTPUT_DIR="build/android/output"
 
 rm -rf $OUTPUT_DIR
 mkdir -p $OUTPUT_DIR
