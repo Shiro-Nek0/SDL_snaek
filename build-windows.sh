@@ -7,13 +7,13 @@ DEPS_DIR="build/windows/deps"
 
 rm -rf $OUTPUT_DIR $BUILD_DIR
 mkdir -p $BUILD_DIR
+mkdir -p $DEPS_DIR
 mkdir -p $OUTPUT_DIR
 
 if [ ! -d "$DEPS_DIR/SDL2-2.32.10/x86_64-w64-mingw32" ]; then
-    echo "============================================================"
-    echo " ERROR: Dependencies missing in $DEPS_DIR"
-    echo "============================================================"
+    echo "ERROR: SDL2 source not found in $DEPS_DIR"
     echo "Please download the MinGW development libraries (SDL2-devel-mingw.tar.gz)"
+    exit 1
 fi
 
 echo "=== Configuring Windows Build (MinGW) ==="

@@ -10,9 +10,14 @@ DEPS_DIR="build/android/deps"
 
 echo "Detected Project Name: $PROJECT_NAME"
 
+echo "Cleaning old build cache..."
+rm -rf $OUTPUT_DIR $ANDROID_PROJECT_DIR/build
+mkdir -p $DEPS_DIR
+mkdir -p $OUTPUT_DIR
+
 if [ ! -d "$DEPS_DIR/SDL2" ]; then
     echo "ERROR: SDL2 source not found in $DEPS_DIR"
-    echo "Please run: mv SDL_snaek_android/app/jni/SDL2* $DEPS_DIR/"
+    echo "Please download the development libraries (SDL2-2.32.10.tar.gz)"
     exit 1
 fi
 
@@ -28,10 +33,6 @@ magick ./assets/icon.png -resize 72x72   $ANDROID_PROJECT_DIR/app/src/main/res/m
 magick ./assets/icon.png -resize 96x96   $ANDROID_PROJECT_DIR/app/src/main/res/mipmap-xhdpi/ic_launcher.png
 magick ./assets/icon.png -resize 144x144 $ANDROID_PROJECT_DIR/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
 magick ./assets/icon.png -resize 192x192 $ANDROID_PROJECT_DIR/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
-echo "Cleaning old build cache..."
-rm -f $OUTPUT_DIR/*.apk
-rm -rf $ANDROID_PROJECT_DIR/build
 
 echo "=== Building Android APK ==="
 cd $ANDROID_PROJECT_DIR
