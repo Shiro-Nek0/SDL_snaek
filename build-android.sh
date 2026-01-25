@@ -10,8 +10,6 @@ DEPS_DIR="build/android/deps"
 
 echo "Detected Project Name: $PROJECT_NAME"
 
-echo "Cleaning old build cache..."
-rm -rf $OUTPUT_DIR $ANDROID_PROJECT_DIR/build
 mkdir -p $DEPS_DIR
 mkdir -p $OUTPUT_DIR
 
