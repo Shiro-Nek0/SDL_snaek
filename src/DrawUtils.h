@@ -14,11 +14,9 @@ enum class Align {
 
 class DrawUtils {
 public:
-    // Helper: Returns a new rect shifted by the alignment
     static SDL_Rect GetAlignedRect(int x, int y, int w, int h, Align align) {
         SDL_Rect r = {x, y, w, h};
 
-        // Horizontal Adjustment
         switch (align) {
             case Align::TOP_CENTER:
             case Align::CENTER:
@@ -30,7 +28,7 @@ public:
             case Align::BOTTOM_RIGHT:
                 r.x -= w;
                 break;
-            default: break; // Left (default)
+            default: break;
         }
 
         // Vertical Adjustment
@@ -45,19 +43,17 @@ public:
             case Align::BOTTOM_RIGHT:
                 r.y -= h;
                 break;
-            default: break; // Top (default)
+            default: break;
         }
 
         return r;
     }
 
-    // Wrapper to draw standard rect
     static void DrawRect(SDL_Renderer* renderer, int x, int y, int w, int h, Align align) {
         SDL_Rect r = GetAlignedRect(x, y, w, h, align);
         SDL_RenderDrawRect(renderer, &r);
     }
 
-    // Wrapper for Filled Rect
     static void FillRect(SDL_Renderer* renderer, int x, int y, int w, int h, Align align) {
         SDL_Rect r = GetAlignedRect(x, y, w, h, align);
         SDL_RenderFillRect(renderer, &r);

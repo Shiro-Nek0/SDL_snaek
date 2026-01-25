@@ -16,6 +16,10 @@ if [ ! -d "$DEPS_DIR/SDL2-2.32.10/x86_64-w64-mingw32" ]; then
     exit 1
 fi
 
+echo "=== Generating Windows Resources ==="
+magick assets/icon.png -define icon:auto-resize=256,128,64,48,32,16 "$BUILD_DIR/icon.ico"
+echo '1 ICON "icon.ico"' > "$BUILD_DIR/resources.rc"
+
 echo "=== Configuring Windows Build (MinGW) ==="
 cmake -S . -B $BUILD_DIR -DCMAKE_TOOLCHAIN_FILE=./toolchain-mingw.cmake -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=../../../$OUTPUT_DIR
 

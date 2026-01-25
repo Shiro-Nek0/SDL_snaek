@@ -1,18 +1,18 @@
 #include "DrawUtils.h"
 
 #include <SDL.h>
+#include <SDL_error.h>
+#include <SDL_events.h>
 #include <SDL_image.h>
 #include <SDL_keycode.h>
+#include <SDL_log.h>
 #include <SDL_mixer.h>
 #include <SDL_rect.h>
 #include <SDL_render.h>
-#include <SDL_ttf.h>
-#include <SDL_error.h>
-#include <SDL_events.h>
-#include <SDL_log.h>
 #include <SDL_scancode.h>
 #include <SDL_surface.h>
 #include <SDL_timer.h>
+#include <SDL_ttf.h>
 #include <SDL_video.h>
 #include <algorithm>
 #include <cstddef>
@@ -22,13 +22,13 @@
 #include <string>
 
 // TODO:
-//  make scripts to get SDL2 source code for mingw (./deps) and android (./SDL_snaek_android/app/jni), maybe it can be unified?
+//  make scripts to get SDL2 source code for mingw (./build/windows/deps) and android (./build/android/deps) and also execute download for android in external folder, maybe it can be unified?
 
 using namespace std;
 
 const string WINDOW_TITLE = "snaek";
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 800;
+const int WINDOW_WIDTH = 400;
+const int WINDOW_HEIGHT = 400;
 // const int FRAMERATE = 60;
 
 struct Vector2 {
@@ -139,6 +139,8 @@ void setPlayerPos() {
 }
 
 bool initializeSDL() {
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL could not initialize! SDL Error: %s\n", SDL_GetError());
     return false;
@@ -223,6 +225,8 @@ bool initializeWin() {
     return false;
   }
 
+  SDL_RenderSetLogicalSize(renderer, WINDOW_WIDTH, WINDOW_HEIGHT);
+
   return true;
 }
 
@@ -231,7 +235,6 @@ void handleInput() {
   const Uint8 *currentKeyStates = SDL_GetKeyboardState(NULL);
 
   if (currentKeyStates[SDL_SCANCODE_W]) {
-    // Mix_PlayChannel( -1, s_Point, 0 );
     playerHeading.x = 0;
     playerHeading.y = -1;
   }
@@ -400,9 +403,9 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (Mix_PlayingMusic() == 0) {
-      Mix_PlayMusic(m_BGM, -1);
-    }
+    // if (Mix_PlayingMusic() == 0) {
+    //   Mix_PlayMusic(m_BGM, -1);
+    // }
 
     handleInput();
 
