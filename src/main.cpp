@@ -276,6 +276,40 @@ void handleInput(SDL_Scancode key) {
   }
 }
 
+float touchStartX = 0.0f;
+float touchStartY = 0.0f;
+const float SWIPE_THRESHOLD = 0.05f;
+void handleTouch(SDL_TouchFingerEvent tfinger) {
+  float tfX = tfinger.x;
+  float tfY = tfinger.y;
+
+  float dx = tfX - touchStartX;
+  float dy = tfY - touchStartY;
+
+  if (std::abs(dx) > SWIPE_THRESHOLD || std::abs(dy) > SWIPE_THRESHOLD) {
+    if (std::abs(dx) > std::abs(dy)) {
+      if (dx > 0) {
+        if (playerHeading.x == 0)
+          playerHeading = {1, 0};
+      } else {
+        if (playerHeading.x == 0)
+          playerHeading = {-1, 0};
+      }
+    } else {
+      if (dy > 0) {
+        if (playerHeading.y == 0)
+          playerHeading = {0, 1};
+      } else {
+        if (playerHeading.y == 0)
+          playerHeading = {0, -1};
+      }
+    }
+
+    touchStartX = tfX;
+    touchStartY = tfY;
+  }
+}
+
 void close() {
   // gPromptTexture.free();
 
@@ -415,7 +449,21 @@ int main(int argc, char *argv[]) {
       case SDL_KEYDOWN:
         handleInput(windowEvent.key.keysym.scancode);
         break;
-      case SDL_KEYUP:
+      // case SDL_MOUSEBUTTONDOWN:
+      // case SDL_MOUSEBUTTONUP:
+      //   fingerPos = {0, 0};
+      //   SDL_Log("M");
+      //   break;
+      // case SDL_MOUSEMOTION:
+      //   //fingerPos = {int(windowEvent. * 10), int(windowEvent.tfinger.y * 10)};
+      //   SDL_Log("MM %i, %i", fingerPos.x, fingerPos.y);
+      //   break;
+      case SDL_FINGERDOWN:
+        touchStartX = windowEvent.tfinger.x;
+        touchStartY = windowEvent.tfinger.y;
+        break;
+      case SDL_FINGERMOTION:
+        handleTouch(windowEvent.tfinger);
         break;
       }
     }
