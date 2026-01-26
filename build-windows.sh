@@ -5,10 +5,8 @@ BUILD_DIR="build/windows/temp"
 OUTPUT_DIR="build/windows/output"
 DEPS_DIR="build/windows/deps"
 
-rm -rf $OUTPUT_DIR $BUILD_DIR
-mkdir -p $BUILD_DIR
-mkdir -p $DEPS_DIR
-mkdir -p $OUTPUT_DIR
+#rm -rf $BUILD_DIR
+mkdir -p $BUILD_DIR $OUTPUT_DIR $DEPS_DIR
 
 if [ ! -d "$DEPS_DIR/SDL2-2.32.10/x86_64-w64-mingw32" ]; then
     echo "ERROR: SDL2 source not found in $DEPS_DIR"

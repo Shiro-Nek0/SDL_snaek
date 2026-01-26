@@ -98,12 +98,22 @@ Vector2 getRandPos() {
 void setApplePos() {
   while (true) {
     Vector2 randPos = getRandPos();
+    bool occupied = false;
 
-    if (gameMatrix[randPos.x][randPos.y] == EMPTY) {
+    if (randPos.x == playerHead.x && randPos.y == playerHead.y) {
+      occupied = true;
+    }
 
+    for (int i = 0; i < points; i++) {
+      if (randPos.x == playerTail[i].x && randPos.y == playerTail[i].y) {
+        occupied = true;
+        break;
+      }
+    }
+
+    if (!occupied) {
       applePos = randPos;
       gameMatrix[randPos.x][randPos.y] = APPLE;
-
       break;
     }
   }
@@ -198,7 +208,9 @@ bool loadAssets() {
 }
 
 bool initializeWin() {
-  window = SDL_CreateWindow(WINDOW_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  string titleWithDate = WINDOW_TITLE + " [Built: " + __DATE__ + " " + __TIME__ + "]";
+
+  window = SDL_CreateWindow(titleWithDate.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (!window) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Window could not be created! SDL_Error:  %s\n", SDL_GetError());
     SDL_Quit();
@@ -345,10 +357,13 @@ void drawFG() {
   int lineWidth = 2;
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
+  int startX = (WINDOW_WIDTH - (GRID_COLS * blockSize.x)) / 2;
+  int startY = (WINDOW_HEIGHT - (GRID_ROWS * blockSize.y)) / 2;
+
   for (int y = 0; y < GRID_ROWS; y++) {
     for (int x = 0; x < GRID_COLS; x++) {
-      int rectX = x * blockSize.x;
-      int rectY = y * blockSize.y;
+      int rectX = startX + (x * blockSize.x);
+      int rectY = startY + (y * blockSize.y);
       int rectW = blockSize.x;
       int rectH = blockSize.y;
 
@@ -404,16 +419,19 @@ void drawFG() {
 }
 
 void drawPlayer() {
-  SDL_Rect appleRender = {applePos.x * blockSize.x, applePos.y * blockSize.y, blockSize.x, blockSize.y};
+  int startX = (WINDOW_WIDTH - (GRID_COLS * blockSize.x)) / 2;
+  int startY = (WINDOW_HEIGHT - (GRID_ROWS * blockSize.y)) / 2;
+
+  SDL_Rect appleRender = {startX + (applePos.x * blockSize.x), startY + (applePos.y * blockSize.y), blockSize.x, blockSize.y};
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
   SDL_RenderFillRect(renderer, &appleRender);
 
-  SDL_Rect playerHeadRender = {playerHead.x * blockSize.x, playerHead.y * blockSize.y, blockSize.x, blockSize.y};
+  SDL_Rect playerHeadRender = {startX + (playerHead.x * blockSize.x), startY + (playerHead.y * blockSize.y), blockSize.x, blockSize.y};
   SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
   SDL_RenderFillRect(renderer, &playerHeadRender);
 
   for (int i = 0; i < points; i++) {
-    SDL_Rect tailRect = {playerTail[i].x * blockSize.x, playerTail[i].y * blockSize.y, blockSize.x, blockSize.y};
+    SDL_Rect tailRect = {startX + (playerTail[i].x * blockSize.x), startY + (playerTail[i].y * blockSize.y), blockSize.x, blockSize.y};
 
     SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
     SDL_RenderFillRect(renderer, &tailRect);
@@ -471,12 +489,6 @@ int main(int argc, char *argv[]) {
     // if (Mix_PlayingMusic() == 0) {
     //   Mix_PlayMusic(m_BGM, -1);
     // }
-
-    if (playerHead.x == applePos.x && playerHead.y == applePos.y) {
-      points += 1;
-      setApplePos();
-      Mix_PlayChannel(-1, s_Point, 0);
-    }
 
     int now = SDL_GetTicks();
     if (now - lastMoveTime >= moveDelay) {

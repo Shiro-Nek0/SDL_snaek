@@ -9,9 +9,7 @@ OUTPUT_DIR="build/android/output"
 DEPS_DIR="build/android/deps"
 
 echo "Detected Project Name: $PROJECT_NAME"
-
-mkdir -p $DEPS_DIR
-mkdir -p $OUTPUT_DIR
+mkdir -p $OUTPUT_DIR $DEPS_DIR
 
 if [ ! -d "$DEPS_DIR/SDL2-2.32.10" ]; then
     echo "ERROR: SDL2 source not found in $DEPS_DIR"
@@ -19,7 +17,7 @@ if [ ! -d "$DEPS_DIR/SDL2-2.32.10" ]; then
     exit 1
 fi
 
-echo "Generating Icons..."
+echo "=== Generating Icons ==="
 mkdir -p $ANDROID_PROJECT_DIR/app/src/main/res/mipmap-mdpi
 mkdir -p $ANDROID_PROJECT_DIR/app/src/main/res/mipmap-hdpi
 mkdir -p $ANDROID_PROJECT_DIR/app/src/main/res/mipmap-xhdpi

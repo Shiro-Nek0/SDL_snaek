@@ -5,9 +5,8 @@ set -e
 BUILD_DIR="build/linux/temp"
 OUTPUT_DIR="build/linux/output"
 
-rm -rf build/linux
-mkdir -p $BUILD_DIR
-mkdir -p $OUTPUT_DIR
+#rm -rf $BUILD_DIR
+mkdir -p $BUILD_DIR $OUTPUT_DIR
 
 echo "=== Configuring Linux Build ==="
 cmake -S . -B $BUILD_DIR -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="$(pwd)/$OUTPUT_DIR"
