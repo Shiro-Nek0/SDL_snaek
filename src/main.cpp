@@ -22,14 +22,13 @@
 #include <string>
 
 // TODO:
-//  make scripts to get SDL2 source code for mingw (./build/windows/deps) and android (./build/android/deps) and also execute download for android in external folder, maybe it can be unified?
-
+// make scripts to get SDL2 source code for mingw (./build/windows/deps) and android (./build/android/deps) and also execute download for android in external folder, maybe it can be unified?
+// make the playerTail set stuff in gameMatrix so the apple doesnt spawn where the snake is
 using namespace std;
 
 const string WINDOW_TITLE = "snaek";
 const int WINDOW_WIDTH = 400;
 const int WINDOW_HEIGHT = 400;
-// const int FRAMERATE = 60;
 
 struct Vector2 {
   int x;
@@ -40,8 +39,7 @@ enum {
   EMPTY,
   APPLE,
   PLAYER,
-  PLAYERTAIL,
-  TAIL
+  PLAYERTAIL
 };
 
 random_device randomGenerator;
@@ -53,8 +51,8 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 
 // stage
-const int GRID_COLS = 25;
-const int GRID_ROWS = 25;
+const int GRID_COLS = 15;
+const int GRID_ROWS = 15;
 int gameMatrix[GRID_ROWS][GRID_COLS] = {EMPTY};
 Vector2 blockSize = {WINDOW_WIDTH / GRID_COLS, WINDOW_HEIGHT / GRID_ROWS};
 
@@ -71,24 +69,10 @@ Vector2 playerTail[GRID_COLS * GRID_ROWS] = {0};
 Vector2 playerHeading = {0, 0};
 int points = 0;
 int moveDelay = 150;
+int currentFPS = 0;
 
 // apple
 Vector2 applePos = {0, 0};
-
-void appendTail(int x, int y) {
-  int maxCapacity = GRID_COLS * GRID_ROWS;
-
-  if (points < maxCapacity) {
-    playerTail[points] = {x, y};
-    points++;
-  }
-}
-
-void clearTail() {
-  points = 0;
-
-  std::fill_n(playerTail, GRID_COLS * GRID_ROWS, Vector2{0, 0});
-}
 
 void updateTailPosition(int newHeadX, int newHeadY) {
   for (int i = points - 1; i > 0; i--) {
@@ -102,17 +86,23 @@ void updateTailPosition(int newHeadX, int newHeadY) {
   playerHead = {newHeadX, newHeadY};
 }
 
+Vector2 getRandPos() {
+  std::uniform_int_distribution<> distrX(0, GRID_COLS - 1);
+  std::uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
+  int randX = distrX(gen);
+  int randY = distrY(gen);
+
+  return Vector2{randX, randY};
+}
+
 void setApplePos() {
   while (true) {
-    std::uniform_int_distribution<> distrX(0, GRID_COLS - 1);
-    std::uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
-    int randX = distrX(gen);
-    int randY = distrY(gen);
+    Vector2 randPos = getRandPos();
 
-    if (gameMatrix[randY][randX] == EMPTY) {
+    if (gameMatrix[randPos.x][randPos.y] == EMPTY) {
 
-      applePos = {randX, randY};
-      gameMatrix[randY][randX] = APPLE;
+      applePos = randPos;
+      gameMatrix[randPos.x][randPos.y] = APPLE;
 
       break;
     }
@@ -121,21 +111,19 @@ void setApplePos() {
 
 void setPlayerPos() {
   while (true) {
-    uniform_int_distribution<> distrX(0, GRID_COLS - 1);
-    int randX = distrX(gen);
+    Vector2 randPos = getRandPos();
 
-    uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
-    int randY = distrY(gen);
+    if (gameMatrix[randPos.x][randPos.y] == EMPTY) {
 
-    if (gameMatrix[randY][randX] == EMPTY) {
-      playerHead = {randX, randY};
-      gameMatrix[randY][randX] = PLAYER;
+      playerHead = randPos;
+      gameMatrix[randPos.x][randPos.y] = PLAYER;
+
       break;
     }
   }
 
   playerHeading = {0, 0};
-  clearTail();
+  std::fill_n(playerTail, GRID_COLS * GRID_ROWS, Vector2{0, 0});
 }
 
 bool initializeSDL() {
@@ -210,7 +198,7 @@ bool loadAssets() {
 }
 
 bool initializeWin() {
-  window = SDL_CreateWindow("SDL2 Window - FPS: 0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  window = SDL_CreateWindow(WINDOW_TITLE.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (!window) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Window could not be created! SDL_Error:  %s\n", SDL_GetError());
     SDL_Quit();
@@ -230,35 +218,48 @@ bool initializeWin() {
   return true;
 }
 
-void reset();
-void handleInput() {
-  const Uint8 *currentKeyStates = SDL_GetKeyboardState(NULL);
+void reset() {
+  points = 0;
 
-  if (currentKeyStates[SDL_SCANCODE_W]) {
-    playerHeading.x = 0;
-    playerHeading.y = -1;
-  }
+  setApplePos();
+  setPlayerPos();
+}
 
-  if (currentKeyStates[SDL_SCANCODE_S]) {
-    playerHeading.x = 0;
-    playerHeading.y = 1;
-  }
+void handleInput(SDL_Scancode key) {
+  switch (key) {
+  case SDL_SCANCODE_W:
+    if (playerHeading.y == 0) {
+      playerHeading = {0, -1};
+    }
+    break;
 
-  if (currentKeyStates[SDL_SCANCODE_A]) {
-    playerHeading.x = -1;
-    playerHeading.y = 0;
-  }
+  case SDL_SCANCODE_S:
+    if (playerHeading.y == 0) {
+      playerHeading = {0, 1};
+    }
+    break;
 
-  if (currentKeyStates[SDL_SCANCODE_D]) {
-    playerHeading.x = 1;
-    playerHeading.y = 0;
-  }
+  case SDL_SCANCODE_A:
+    if (playerHeading.x == 0) {
+      playerHeading = {-1, 0};
+    }
+    break;
 
-  if (currentKeyStates[SDL_SCANCODE_R]) {
+  case SDL_SCANCODE_D:
+    if (playerHeading.x == 0) {
+      playerHeading = {1, 0};
+    }
+    break;
+
+  case SDL_SCANCODE_R:
     reset();
-  }
+    break;
 
-  if (currentKeyStates[SDL_SCANCODE_M]) {
+  case SDL_SCANCODE_ESCAPE:
+    running = false;
+    break;
+
+  case SDL_SCANCODE_M:
     if (Mix_PlayingMusic() == 0) {
       Mix_PlayMusic(m_BGM, -1);
     } else {
@@ -268,18 +269,11 @@ void handleInput() {
         Mix_PauseMusic();
       }
     }
+    break;
+
+  default:
+    break;
   }
-
-  if (currentKeyStates[SDL_SCANCODE_ESCAPE]) {
-    running = false;
-  }
-}
-
-void reset() {
-  points = 0;
-
-  setApplePos();
-  setPlayerPos();
 }
 
 void close() {
@@ -355,6 +349,24 @@ void drawFG() {
     }
     SDL_FreeSurface(textSurface);
   }
+
+  SDL_Color fpsColor = {255, 255, 0, 255};
+  std::string fpsText = "FPS: " + std::to_string(currentFPS);
+  SDL_Surface *fpsSurface = TTF_RenderText_Blended(f_font, fpsText.c_str(), fpsColor);
+
+  if (fpsSurface != NULL) {
+    SDL_Texture *fpsTexture = SDL_CreateTextureFromSurface(renderer, fpsSurface);
+    if (fpsTexture != NULL) {
+      SDL_Rect fpsRect;
+      fpsRect.w = fpsSurface->w;
+      fpsRect.h = fpsSurface->h;
+      fpsRect.x = 5;
+      fpsRect.y = 5;
+      SDL_RenderCopy(renderer, fpsTexture, NULL, &fpsRect);
+      SDL_DestroyTexture(fpsTexture);
+    }
+    SDL_FreeSurface(fpsSurface);
+  }
 }
 
 void drawPlayer() {
@@ -400,14 +412,17 @@ int main(int argc, char *argv[]) {
       case SDL_QUIT:
         running = false;
         break;
+      case SDL_KEYDOWN:
+        handleInput(windowEvent.key.keysym.scancode);
+        break;
+      case SDL_KEYUP:
+        break;
       }
     }
 
     // if (Mix_PlayingMusic() == 0) {
     //   Mix_PlayMusic(m_BGM, -1);
     // }
-
-    handleInput();
 
     if (playerHead.x == applePos.x && playerHead.y == applePos.y) {
       points += 1;
@@ -464,8 +479,10 @@ int main(int argc, char *argv[]) {
     frameCount++;
     Uint32 currentTime = SDL_GetTicks();
     if (currentTime - startTime >= 1000) {
-      string title = WINDOW_TITLE + " - FPS: " + to_string(frameCount);
-      SDL_SetWindowTitle(window, title.c_str());
+      currentFPS = frameCount;
+
+      // string title = WINDOW_TITLE + " - FPS: " + to_string(frameCount);
+      // SDL_SetWindowTitle(window, title.c_str());
 
       frameCount = 0;
       startTime = currentTime;
