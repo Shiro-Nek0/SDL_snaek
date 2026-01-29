@@ -4,7 +4,7 @@ set -e
 PROJECT_NAME=$(grep "project(" CMakeLists.txt | head -n 1 | sed -E 's/.*project\(([^)]+)\).*/\1/' | tr -d '[:space:]')
 if [ -z "$PROJECT_NAME" ]; then PROJECT_NAME="Game"; fi
 
-ANDROID_PROJECT_DIR="SDL_snaek_android"
+ANDROID_PROJECT_DIR="android-project"
 OUTPUT_DIR="build/android/output"
 DEPS_DIR="build/android/deps"
 

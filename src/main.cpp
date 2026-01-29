@@ -23,7 +23,6 @@
 
 // TODO:
 // make scripts to get SDL2 source code for mingw (./build/windows/deps) and android (./build/android/deps) and also execute download for android in external folder, maybe it can be unified?
-// make the playerTail set stuff in gameMatrix so the apple doesnt spawn where the snake is
 using namespace std;
 
 const string WINDOW_TITLE = "snaek";
@@ -87,8 +86,8 @@ void updateTailPosition(int newHeadX, int newHeadY) {
 }
 
 Vector2 getRandPos() {
-  std::uniform_int_distribution<> distrX(0, GRID_COLS - 1);
-  std::uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
+  uniform_int_distribution<> distrX(0, GRID_COLS - 1);
+  uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
   int randX = distrX(gen);
   int randY = distrY(gen);
 
@@ -133,7 +132,7 @@ void setPlayerPos() {
   }
 
   playerHeading = {0, 0};
-  std::fill_n(playerTail, GRID_COLS * GRID_ROWS, Vector2{0, 0});
+  fill_n(playerTail, GRID_COLS * GRID_ROWS, Vector2{0, 0});
 }
 
 bool initializeSDL() {
@@ -298,8 +297,8 @@ void handleTouch(SDL_TouchFingerEvent tfinger) {
   float dx = tfX - touchStartX;
   float dy = tfY - touchStartY;
 
-  if (std::abs(dx) > SWIPE_THRESHOLD || std::abs(dy) > SWIPE_THRESHOLD) {
-    if (std::abs(dx) > std::abs(dy)) {
+  if (abs(dx) > SWIPE_THRESHOLD || abs(dy) > SWIPE_THRESHOLD) {
+    if (abs(dx) > abs(dy)) {
       if (dx > 0) {
         if (playerHeading.x == 0)
           playerHeading = {1, 0};
@@ -378,7 +377,7 @@ void drawFG() {
   }
 
   SDL_Color textColor = {255, 255, 255, 255};
-  std::string scoreText = "Points: " + std::to_string(points);
+  string scoreText = "Points: " + to_string(points);
 
   SDL_Surface *textSurface = TTF_RenderText_Blended(f_font, scoreText.c_str(), textColor);
 
@@ -400,7 +399,7 @@ void drawFG() {
   }
 
   SDL_Color fpsColor = {255, 255, 0, 255};
-  std::string fpsText = "FPS: " + std::to_string(currentFPS);
+  string fpsText = "FPS: " + to_string(currentFPS);
   SDL_Surface *fpsSurface = TTF_RenderText_Blended(f_font, fpsText.c_str(), fpsColor);
 
   if (fpsSurface != NULL) {

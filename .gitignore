@@ -5,6 +5,6 @@ build/
 .cache/
 compile_commands.json
 
-SDL_snaek_android/app/build/
-SDL_snaek_android/app/.cxx
-SDL_snaek_android/.gradle
+android-project/app/build/
+android-project/app/.cxx
+android-project/.gradle
