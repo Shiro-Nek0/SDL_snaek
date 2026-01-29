@@ -1,5 +1,11 @@
 #include <SDL.h>
 
+struct Vector2 {
+  int x;
+  int y;
+};
+
+
 enum class Align {
     TOP_LEFT,
     MIDDLE_LEFT,

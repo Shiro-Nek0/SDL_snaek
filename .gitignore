@@ -3,6 +3,7 @@ build/
 .clang-format
 .vscode/
 .cache/
+imgui.ini
 compile_commands.json
 
 android-project/app/build/

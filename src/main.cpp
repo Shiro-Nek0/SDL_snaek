@@ -21,18 +21,17 @@
 #include <stdio.h>
 #include <string>
 
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
+
 // TODO:
 // make scripts to get SDL2 source code for mingw (./build/windows/deps) and android (./build/android/deps) and also execute download for android in external folder, maybe it can be unified?
-using namespace std;
 
-const string WINDOW_TITLE = "snaek";
-const int WINDOW_WIDTH = 400;
-const int WINDOW_HEIGHT = 400;
-
-struct Vector2 {
-  int x;
-  int y;
-};
+const std::string WINDOW_TITLE = "snaek";
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 720;
+Vector2 windowSize = {WINDOW_WIDTH, WINDOW_HEIGHT};
 
 enum {
   EMPTY,
@@ -41,10 +40,11 @@ enum {
   PLAYERTAIL
 };
 
-random_device randomGenerator;
-mt19937 gen(randomGenerator());
+std::random_device randomGenerator;
+std::mt19937 gen(randomGenerator());
 
 bool running = true;
+bool isPaused = false;
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -53,7 +53,7 @@ SDL_Renderer *renderer = NULL;
 const int GRID_COLS = 15;
 const int GRID_ROWS = 15;
 int gameMatrix[GRID_ROWS][GRID_COLS] = {EMPTY};
-Vector2 blockSize = {WINDOW_WIDTH / GRID_COLS, WINDOW_HEIGHT / GRID_ROWS};
+Vector2 blockSize = {1, 1};
 
 // assets
 int fontSize = 32;
@@ -86,8 +86,8 @@ void updateTailPosition(int newHeadX, int newHeadY) {
 }
 
 Vector2 getRandPos() {
-  uniform_int_distribution<> distrX(0, GRID_COLS - 1);
-  uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
+  std::uniform_int_distribution<> distrX(0, GRID_COLS - 1);
+  std::uniform_int_distribution<> distrY(0, GRID_ROWS - 1);
   int randX = distrX(gen);
   int randY = distrY(gen);
 
@@ -132,7 +132,7 @@ void setPlayerPos() {
   }
 
   playerHeading = {0, 0};
-  fill_n(playerTail, GRID_COLS * GRID_ROWS, Vector2{0, 0});
+  std::fill_n(playerTail, GRID_COLS * GRID_ROWS, Vector2{0, 0});
 }
 
 bool initializeSDL() {
@@ -207,7 +207,7 @@ bool loadAssets() {
 }
 
 bool initializeWin() {
-  string titleWithDate = WINDOW_TITLE + " [Built: " + __DATE__ + " " + __TIME__ + "]";
+  std::string titleWithDate = WINDOW_TITLE + " [Built: " + __DATE__ + " " + __TIME__ + "]";
 
   window = SDL_CreateWindow(titleWithDate.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (!window) {
@@ -223,8 +223,6 @@ bool initializeWin() {
     SDL_Quit();
     return false;
   }
-
-  SDL_RenderSetLogicalSize(renderer, WINDOW_WIDTH, WINDOW_HEIGHT);
 
   return true;
 }
@@ -264,10 +262,6 @@ void handleInput(SDL_Scancode key) {
 
   case SDL_SCANCODE_R:
     reset();
-    break;
-
-  case SDL_SCANCODE_ESCAPE:
-    running = false;
     break;
 
   case SDL_SCANCODE_M:
@@ -346,7 +340,10 @@ void close() {
 }
 
 void drawBG() {
-  SDL_Rect cell = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+  SDL_RenderSetViewport(renderer, NULL);
+  SDL_RenderSetClipRect(renderer, NULL);
+
+  SDL_Rect cell = {0, 0, windowSize.x, windowSize.y};
   SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
   SDL_RenderDrawRect(renderer, &cell);
   SDL_RenderClear(renderer);
@@ -356,8 +353,9 @@ void drawFG() {
   int lineWidth = 2;
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-  int startX = (WINDOW_WIDTH - (GRID_COLS * blockSize.x)) / 2;
-  int startY = (WINDOW_HEIGHT - (GRID_ROWS * blockSize.y)) / 2;
+  // Use windowSize instead of WINDOW_WIDTH
+  int startX = (windowSize.x - (GRID_COLS * blockSize.x)) / 2;
+  int startY = (windowSize.y - (GRID_ROWS * blockSize.y)) / 2;
 
   for (int y = 0; y < GRID_ROWS; y++) {
     for (int x = 0; x < GRID_COLS; x++) {
@@ -376,30 +374,27 @@ void drawFG() {
     }
   }
 
+  // Update text positioning to stay centered in the new window size
   SDL_Color textColor = {255, 255, 255, 255};
-  string scoreText = "Points: " + to_string(points);
-
+  std::string scoreText = "Points: " + std::to_string(points);
   SDL_Surface *textSurface = TTF_RenderText_Blended(f_font, scoreText.c_str(), textColor);
 
   if (textSurface != NULL) {
     SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-
     if (textTexture != NULL) {
       SDL_Rect textRect;
       textRect.w = textSurface->w;
       textRect.h = textSurface->h;
-      textRect.x = (WINDOW_WIDTH / 2) - (textRect.w / 2);
+      textRect.x = (windowSize.x / 2) - (textRect.w / 2); // Dynamic center
       textRect.y = 15;
-
       SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
-
       SDL_DestroyTexture(textTexture);
     }
     SDL_FreeSurface(textSurface);
   }
 
   SDL_Color fpsColor = {255, 255, 0, 255};
-  string fpsText = "FPS: " + to_string(currentFPS);
+  std::string fpsText = "FPS: " + std::to_string(currentFPS);
   SDL_Surface *fpsSurface = TTF_RenderText_Blended(f_font, fpsText.c_str(), fpsColor);
 
   if (fpsSurface != NULL) {
@@ -418,8 +413,8 @@ void drawFG() {
 }
 
 void drawPlayer() {
-  int startX = (WINDOW_WIDTH - (GRID_COLS * blockSize.x)) / 2;
-  int startY = (WINDOW_HEIGHT - (GRID_ROWS * blockSize.y)) / 2;
+  int startX = (windowSize.x - (GRID_COLS * blockSize.x)) / 2;
+  int startY = (windowSize.y - (GRID_ROWS * blockSize.y)) / 2;
 
   SDL_Rect appleRender = {startX + (applePos.x * blockSize.x), startY + (applePos.y * blockSize.y), blockSize.x, blockSize.y};
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -437,6 +432,15 @@ void drawPlayer() {
   }
 }
 
+void resizeBlocks() {
+  SDL_GetWindowSize(window, &windowSize.x, &windowSize.y);
+
+  int minDim = std::min(windowSize.x, windowSize.y);
+
+  int size = minDim / std::max(GRID_COLS, GRID_ROWS);
+  blockSize = {size, size};
+}
+
 int main(int argc, char *argv[]) {
   if (!initializeSDL()) {
     return EXIT_FAILURE;
@@ -450,21 +454,46 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  (void)io;
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+  ImGui::StyleColorsDark();
+
+  ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+  ImGui_ImplSDLRenderer2_Init(renderer);
+
   SDL_Event windowEvent;
 
   Uint32 startTime = SDL_GetTicks();
   int frameCount = 0;
   int lastMoveTime = 0;
-
+  resizeBlocks();
   reset();
   while (running) {
     if (SDL_PollEvent(&windowEvent)) {
+      ImGui_ImplSDL2_ProcessEvent(&windowEvent);
       switch (windowEvent.type) {
+      case SDL_WINDOWEVENT:
+        switch (windowEvent.window.event) {
+        case SDL_WINDOWEVENT_SIZE_CHANGED:
+        case SDL_WINDOWEVENT_RESIZED:
+          resizeBlocks();
+          break;
+        }
+        break;
       case SDL_QUIT:
         running = false;
         break;
       case SDL_KEYDOWN:
-        handleInput(windowEvent.key.keysym.scancode);
+        if (windowEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE ||
+            windowEvent.key.keysym.scancode == SDL_SCANCODE_AC_BACK) {
+          isPaused = !isPaused;
+        } else if (!io.WantCaptureKeyboard && !isPaused) {
+          handleInput(windowEvent.key.keysym.scancode);
+        }
         break;
       // case SDL_MOUSEBUTTONDOWN:
       // case SDL_MOUSEBUTTONUP:
@@ -490,7 +519,7 @@ int main(int argc, char *argv[]) {
     // }
 
     int now = SDL_GetTicks();
-    if (now - lastMoveTime >= moveDelay) {
+    if (!isPaused && (now - lastMoveTime >= moveDelay)) {
       for (int i = points; i > 0; i--) {
         playerTail[i] = playerTail[i - 1];
       }
@@ -533,8 +562,45 @@ int main(int argc, char *argv[]) {
     drawBG();
     drawPlayer();
     drawFG();
-    SDL_RenderPresent(renderer);
+    ImGui_ImplSDLRenderer2_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+    if (isPaused) {
 
+      ImGui::SetNextWindowPos(
+          ImVec2(windowSize.x / 2.0f, windowSize.y / 2.0f),
+          ImGuiCond_Always,
+          ImVec2(0.5f, 0.5f));
+
+      ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove |
+                                      ImGuiWindowFlags_NoCollapse |
+                                      ImGuiWindowFlags_NoResize |
+                                      ImGuiWindowFlags_AlwaysAutoResize;
+
+      ImGui::Begin("PAUSED", NULL, window_flags);
+
+      if (ImGui::Button("Continue", ImVec2(200, 0))) {
+        isPaused = false;
+      }
+
+      if (ImGui::Button("Restart", ImVec2(200, 0))) {
+        reset();
+        isPaused = false;
+      }
+
+      ImGui::Separator();
+
+      if (ImGui::Button("Quit", ImVec2(200, 0))) {
+        running = false;
+      }
+
+      ImGui::End();
+    }
+
+    ImGui::Render();
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+
+    SDL_RenderPresent(renderer);
     frameCount++;
     Uint32 currentTime = SDL_GetTicks();
     if (currentTime - startTime >= 1000) {
